@@ -85,8 +85,6 @@ export default function App() {
   const [text, setText] = useState(null);
   const [valor, setValor] = useState(null);
 
-  const [forceUpdate, forceUpdateId] = useState(useForceUpdate());
-
   const [open, setOpen] = useState(false);
   const [categoria, setCategoria] = useState("Mercado");
   const [novaCategoria, setNovaCategoria] = useState("Teste");
@@ -125,8 +123,6 @@ export default function App() {
         "create table if not exists categoria (label text, value text);"
       );
       carregarCategorias()
-
-      
     });
   }, []);
 
@@ -149,7 +145,6 @@ export default function App() {
         );
       },
       (e) => {console.log(e)},
-      forceUpdate
     );
 
     console.log("linha 106")
@@ -169,19 +164,18 @@ export default function App() {
           "insert into categoria (label, value) values (?, ?)", 
           [novaCategoria, novaCategoria],
           (_, { rows }) => {
-            "ADICIONADO COM SUCESSO"
+            console.log("ADICIONADO COM SUCESSO")
           }
         );
         tx.executeSql(
           "select * from categoria", 
           [], 
           (_, { rows }) => {
-            setCategoria(rows) 
+            setCategorias(rows._array)
           }
         );
       },
       (e) => {console.log(e)},
-      forceUpdate
     );
 
     console.log("linha 106")
@@ -239,7 +233,7 @@ export default function App() {
               onChangeText={(text) => setNovaCategoria(text)}
               placeholder="Categoria"
               style={styles.input}
-              value={text}
+              value={novaCategoria}
             />
             
             <Button
@@ -252,7 +246,6 @@ export default function App() {
           </View>
           <ScrollView style={styles.listArea}>
             <Items
-              key={`forceupdate-todo-${forceUpdateId}`}
               done={categoria}
             />
           </ScrollView>
@@ -260,13 +253,6 @@ export default function App() {
       )}
     </View>
   );
-}
-
-function useForceUpdate() {
-  console.log("useForceUpdate()");
-
-  const [value, setValue] = useState(0);
-  return [() => setValue(value + 1), value];
 }
 
 const styles = StyleSheet.create({
