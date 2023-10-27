@@ -7,9 +7,7 @@ import Moment from 'moment';
 export function Items({ done: doneHeading, onPressItem })  { const [items, setItems] = useState(null);
     const db = openDatabase();
 
-    console.log("Items()");
     useEffect(() => {
-      console.log("doneHeading: "+doneHeading);
       db.transaction((tx) => {
         tx.executeSql(
           `select * from despesas where categoria = ?;`,

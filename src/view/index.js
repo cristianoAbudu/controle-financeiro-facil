@@ -1,28 +1,27 @@
 import { useState, useEffect } from "react";
 import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Button,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+    Button,
 } from "react-native";
 
 import DropDownPicker from 'react-native-dropdown-picker';
 import Moment from 'moment';
 
 import { styles } from "../styles";
-import  openDatabase, { createDatabase, dropDespesas }  from "../database/openDatabase";
-import {Items} from "../components/items";
+import openDatabase, { createDatabase, dropDespesas, selectCategorias } from "../database/openDatabase";
+import { Items } from "../components/items";
 
 
 export default function AppView() {
     const db = openDatabase();
 
 
-    console.log("App()");
     const [text, setText] = useState(null);
     const [valor, setValor] = useState(null);
 
@@ -31,24 +30,12 @@ export default function AppView() {
     const [open, setOpen] = useState(false);
     const [categoria, setCategoria] = useState("Mercado");
     const [novaCategoria, setNovaCategoria] = useState("Teste");
-    const [categorias, setCategorias] = useState([{ "label": "Aaaa", "value": "Aaaa" }]);
+    const [categorias, setCategorias] = useState([]);
 
     Moment.locale('pt-BR');
 
     function carregarCategorias() {
-        console.log('carregarCategorias()')
-        db.transaction((tx) => {
-            tx.executeSql(
-                'select * from categoria;',
-                null,
-                (_, { rows: { _array } }) => {
-                    console.log("categorias: '" + JSON.stringify(categorias) + "'")
-                    setCategorias(_array);
-                    console.log("_array: '" + JSON.stringify(_array) + "'")
-                    console.log("categorias: '" + JSON.stringify(categorias) + "'")
-                }
-            );
-        });
+        const categoriasDB = selectCategorias(db);
     }
 
     useEffect(() => {
@@ -61,61 +48,56 @@ export default function AppView() {
 
     }, []);
 
-    const add = (text, valor, categoria) => {
-        console.log("add =");
+    useEffect(() => {
+        carregarCategorias()
+    }, [categoria]);
 
-        // is valor empty?
-        console.log(text)
-        console.log(valor)
+
+
+    const add = (text, valor, categoria) => {
         if (valor === null || valor === "") {
             return false;
         }
-        console.log("linha 93")
-
-        db.transaction(
-            (tx) => {
-                tx.executeSql("insert into despesas (done, value, valor, data, categoria) values (0, ?, ?, CURRENT_TIMESTAMP, ?)", [text, valor, categoria]);
-                tx.executeSql("select * from despesas where categoria = ?", [categoria], (_, { rows }) =>
-                    console.log(JSON.stringify(rows))
-                );
-            },
-            (e) => { console.log(e) },
-            forceUpdate
-        );
-
-        console.log("linha 106")
+        // db.transaction(
+        //     (tx) => {
+        //         tx.executeSql("insert into despesas (done, value, valor, data, categoria) values (0, ?, ?, CURRENT_TIMESTAMP, ?)", [text, valor, categoria]);
+        //         tx.executeSql("select * from despesas where categoria = ?", [categoria], (_, { rows }) =>
+        //             console.log(JSON.stringify(rows))
+        //         );
+        //     },
+        //     (e) => { console.log(e) },
+        //     forceUpdate
+        // );
 
     };
 
     const addCategoria = (novaCategoria) => {
-        console.log("addCategoria =" + novaCategoria);
 
         if (novaCategoria === null || novaCategoria === "") {
             return false;
         }
 
-        db.transaction(
-            (tx) => {
-                tx.executeSql(
-                    "insert into categoria (label, value) values (?, ?)",
-                    [novaCategoria, novaCategoria],
-                    (_, { rows }) => {
-                        "ADICIONADO COM SUCESSO"
-                    }
-                );
-                tx.executeSql(
-                    "select * from categoria",
-                    [],
-                    (_, { rows }) => {
-                        setCategoria(rows)
-                    }
-                );
-            },
-            (e) => { console.log(e) },
-            forceUpdate
-        );
+        // db.transaction(
+        //     (tx) => {
+        //         tx.executeSql(
+        //             "insert into categoria (label, value) values (?, ?)",
+        //             [novaCategoria, novaCategoria],
+        //             (_, { rows }) => {
+        //                 "ADICIONADO COM SUCESSO"
+        //             }
+        //         );
+        //         tx.executeSql(
+        //             "select * from categoria",
+        //             [],
+        //             (_, { rows }) => {
+        //                 setCategoria(rows)
+        //             }
+        //         );
+        //     },
+        //     (e) => { console.log(e) },
+        //     forceUpdate
+        // );
 
-        console.log("linha 106")
 
     };
 
@@ -174,7 +156,7 @@ export default function AppView() {
                         />
 
                         <Button
-                            title="OK"
+                            title="Adicionar categoria"
                             onPress={() => {
                                 addCategoria(novaCategoria)
                                 setNovaCategoria(null)
@@ -195,8 +177,6 @@ export default function AppView() {
 
 
 function useForceUpdate() {
-    console.log("useForceUpdate()");
-
     const [value, setValue] = useState(0);
     return [() => setValue(value + 1), value];
 }

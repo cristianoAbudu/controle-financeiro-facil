@@ -2,7 +2,6 @@
 import * as SQLite from "expo-sqlite";
 
 export default function openDatabase() {
-    console.log("openDatabase()");
 
     if (Platform.OS === "web") {
         return {
@@ -46,6 +45,22 @@ export function dropCategoria(db){
     });
 }
 
+export function selectCategorias(db){
+    let categorias = [];
+
+    db.transaction((tx) => {
+        return tx.executeSql(
+            'select * from categoria;',
+            null,
+            (_, { rows: { _array } }) => {
+                categorias = _array;
+            }
+        );
+
+    });
+
+    return categorias;
+}
 
 
 
