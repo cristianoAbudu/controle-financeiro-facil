@@ -73,6 +73,9 @@ export default function AppView() {
 
     const addCategoria = (novaCategoria) => {
 
+        //CODIGO ABAIXO GARANTE QUE A TELA VAI ATUALIZAR COM A NOVA CATEGORIA (TRABALHANDO JUNTO COM O USEEFFECT NA LINHA 50)
+        setCategorias(prev => [...prev, { label: novaCategoria, value: novaCategoria }])
+
         if (novaCategoria === null || novaCategoria === "") {
             return false;
         }
