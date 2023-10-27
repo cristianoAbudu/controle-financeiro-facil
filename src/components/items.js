@@ -1,4 +1,12 @@
+import { useState, useEffect } from "react";
+import { Text, View, TouchableOpacity } from "react-native";
+import openDatabase from "../database/openDatabase";
+import { styles } from "../styles";
+import Moment from 'moment';
+
 export function Items({ done: doneHeading, onPressItem })  { const [items, setItems] = useState(null);
+    const db = openDatabase();
+
     console.log("Items()");
     useEffect(() => {
       console.log("doneHeading: "+doneHeading);

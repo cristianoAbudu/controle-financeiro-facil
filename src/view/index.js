@@ -14,10 +14,14 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import Moment from 'moment';
 
 import { styles } from "../styles";
+import  openDatabase  from "../database/openDatabase";
 import {Items} from "../components/items";
 
 
 export default function AppView() {
+    const db = openDatabase();
+
+
     console.log("App()");
     const [text, setText] = useState(null);
     const [valor, setValor] = useState(null);
