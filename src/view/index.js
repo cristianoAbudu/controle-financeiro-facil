@@ -29,7 +29,19 @@ export default function AppView() {
     Moment.locale('pt-BR');
 
     function carregarCategorias() {
-        const categoriasDB = selectCategorias(db);
+        db.transaction((tx) => {
+            return tx.executeSql(
+                'select * from categoria;',
+                null,
+                (_, { rows: { _array } }) => {
+                    console.log("categorias: '" + JSON.stringify(categorias) + "'")
+                    setCategorias(_array);
+                    console.log("_array: '" + JSON.stringify(_array) + "'")
+                    console.log("categorias: '" + JSON.stringify(categorias) + "'")
+                }
+            );
+
+        });
     }
 
     useEffect(() => {
