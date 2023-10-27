@@ -18,11 +18,8 @@ import openDatabase, { createDatabase, dropDespesas, selectCategorias } from "..
 export default function AppView() {
     const db = openDatabase();
 
-
     const [text, setText] = useState(null);
     const [valor, setValor] = useState(null);
-
-    const [forceUpdate, forceUpdateId] = useState(useForceUpdate());
 
     const [open, setOpen] = useState(false);
     const [categoria, setCategoria] = useState("Mercado");
@@ -55,16 +52,17 @@ export default function AppView() {
         if (valor === null || valor === "") {
             return false;
         }
-        // db.transaction(
-        //     (tx) => {
-        //         tx.executeSql("insert into despesas (done, value, valor, data, categoria) values (0, ?, ?, CURRENT_TIMESTAMP, ?)", [text, valor, categoria]);
-        //         tx.executeSql("select * from despesas where categoria = ?", [categoria], (_, { rows }) =>
-        //             console.log(JSON.stringify(rows))
-        //         );
-        //     },
-        //     (e) => { console.log(e) },
-        //     forceUpdate
-        // );
+
+        db.transaction(
+            (tx) => {
+                tx.executeSql("insert into despesas (done, value, valor, data, categoria) values (0, ?, ?, CURRENT_TIMESTAMP, ?)", [text, valor, categoria]);
+                tx.executeSql("select * from despesas where categoria = ?", [categoria], (_, { rows }) =>
+                    console.log(JSON.stringify(rows))
+                );
+            },
+            (e) => { console.log(e) },
+            forceUpdate
+        );
 
     };
 
@@ -77,26 +75,26 @@ export default function AppView() {
             return false;
         }
 
-        // db.transaction(
-        //     (tx) => {
-        //         tx.executeSql(
-        //             "insert into categoria (label, value) values (?, ?)",
-        //             [novaCategoria, novaCategoria],
-        //             (_, { rows }) => {
-        //                 "ADICIONADO COM SUCESSO"
-        //             }
-        //         );
-        //         tx.executeSql(
-        //             "select * from categoria",
-        //             [],
-        //             (_, { rows }) => {
-        //                 setCategoria(rows)
-        //             }
-        //         );
-        //     },
-        //     (e) => { console.log(e) },
-        //     forceUpdate
-        // );
+        db.transaction(
+            (tx) => {
+                tx.executeSql(
+                    "insert into categoria (label, value) values (?, ?)",
+                    [novaCategoria, novaCategoria],
+                    (_, { rows }) => {
+                        "ADICIONADO COM SUCESSO"
+                    }
+                );
+                tx.executeSql(
+                    "select * from categoria",
+                    [],
+                    (_, { rows }) => {
+                        setCategoria(rows)
+                    }
+                );
+            },
+            (e) => { console.log(e) },
+            forceUpdate
+        );
 
 
     };
@@ -175,8 +173,3 @@ export default function AppView() {
     );
 }
 
-
-function useForceUpdate() {
-    const [value, setValue] = useState(0);
-    return [() => setValue(value + 1), value];
-}

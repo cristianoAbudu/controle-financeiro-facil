@@ -4,7 +4,8 @@ import openDatabase from "../database/openDatabase";
 import { styles } from "../styles";
 import Moment from 'moment';
 
-export function Items({ done: doneHeading, onPressItem })  { const [items, setItems] = useState(null);
+export function Items({ done: doneHeading, onPressItem })  {
+    const [items, setItems] = useState(null);
     const db = openDatabase();
 
     useEffect(() => {
