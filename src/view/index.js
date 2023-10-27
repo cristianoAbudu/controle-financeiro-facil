@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
 import {
     Platform,
-    ScrollView,
-    StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity,
     View,
     Button,
 } from "react-native";
@@ -15,7 +12,7 @@ import Moment from 'moment';
 
 import { styles } from "../styles";
 import openDatabase, { createDatabase, dropDespesas, selectCategorias } from "../database/openDatabase";
-import { Items } from "../components/items";
+
 
 
 export default function AppView() {
@@ -166,12 +163,12 @@ export default function AppView() {
                             }}
                         />
                     </View>
-                    <ScrollView style={styles.listArea}>
+                    {/* <ScrollView style={styles.listArea}>
                         <Items
                             key={`forceupdate-todo-${forceUpdateId}`}
                             done={categoria}
                         />
-                    </ScrollView>
+                    </ScrollView> */}
                 </>
             )}
         </View>
