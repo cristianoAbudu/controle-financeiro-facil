@@ -18,5 +18,36 @@ export default function openDatabase() {
     return db;
 }
 
+export function createDatabase(db){
+    db.transaction((tx) => {
+        tx.executeSql(
+            "create table if not exists despesas (id integer primary key not null, done int, value text, valor integer, data date, categoria text);"
+        );
+
+        tx.executeSql(
+            "create table if not exists categoria (label text, value text);"
+        );
+    });
+}
+
+export function dropDespesas(db){
+    db.transaction((tx) => {
+        tx.executeSql(
+            "drop table despesas;"
+        );
+    });
+}
+
+export function dropCategoria(db){
+    db.transaction((tx) => {
+        tx.executeSql(
+            "drop table categoria;"
+        );
+    });
+}
+
+
+
+
 
 

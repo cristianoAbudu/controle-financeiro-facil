@@ -14,7 +14,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import Moment from 'moment';
 
 import { styles } from "../styles";
-import  openDatabase  from "../database/openDatabase";
+import  openDatabase, { createDatabase, dropDespesas }  from "../database/openDatabase";
 import {Items} from "../components/items";
 
 
@@ -52,23 +52,13 @@ export default function AppView() {
     }
 
     useEffect(() => {
-        db.transaction((tx) => {
-            //tx.executeSql(
-            //  "drop table despesas;"
-            //);
-            tx.executeSql(
-                "create table if not exists despesas (id integer primary key not null, done int, value text, valor integer, data date, categoria text);"
-            );/*
-        tx.executeSql(
-          "drop table categoria;"
-        );*/
-            tx.executeSql(
-                "create table if not exists categoria (label text, value text);"
-            );
-            carregarCategorias()
+        // dropDespesas(db)
+        // dropCategoria(db)
 
+        createDatabase(db)
 
-        });
+        carregarCategorias()
+
     }, []);
 
     const add = (text, valor, categoria) => {
