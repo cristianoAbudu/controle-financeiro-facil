@@ -35,20 +35,20 @@ function openDatabase() {
 
 const db = openDatabase();
 
-function Items({ done: doneHeading, onPressItem })  { const [items, setItems] = useState(null);
-  console.log("Items()");
+function Items({ categoria, onPressItem, items, setItems })  {
+  console.log("Items()", items);
   useEffect(() => {
-    console.log("doneHeading: "+doneHeading);
+    console.log("categoria: ", categoria);
     db.transaction((tx) => {
       tx.executeSql(
         `select * from despesas where categoria = ?;`,
-        [doneHeading],
+        [categoria],
         (_, { rows: { _array } }) => setItems(_array)
       );
     });
-  }, []);
+  }, [categoria]); // dependencia de categoria para atualizar quando categoria for alterada
 
-  const heading = "Despesas de "+doneHeading;
+  const heading = "Despesas de " + categoria;
 
   if (items === null || items.length === 0) {
     return null;
@@ -89,7 +89,8 @@ export default function App() {
   const [categoria, setCategoria] = useState("Mercado");
   const [novaCategoria, setNovaCategoria] = useState("Teste");
   const [categorias, setCategorias] = useState([{"label":"Aaaa","value":"Aaaa"}]);
- 
+  const [items, setItems] = useState([]);
+
   Moment.locale('pt-BR'); 
 
   function carregarCategorias() {
@@ -127,7 +128,7 @@ export default function App() {
   }, []);
 
   const add = (text, valor, categoria) => {
-    console.log("add =");
+    console.log("add = ", categoria);
 
     // is valor empty?
     console.log(text)
@@ -140,8 +141,13 @@ export default function App() {
     db.transaction(
       (tx) => {
         tx.executeSql("insert into despesas (done, value, valor, data, categoria) values (0, ?, ?, CURRENT_TIMESTAMP, ?)", [text, valor, categoria]);
-        tx.executeSql("select * from despesas where categoria = ?", [categoria], (_, { rows }) =>
-          console.log(JSON.stringify(rows))
+        tx.executeSql(
+            "select * from despesas where categoria = ?",
+            [categoria],
+            function (_, { rows }){
+              console.log('rows', JSON.stringify(rows))
+              setItems(rows._array)
+            }
         );
       },
       (e) => {console.log(e)},
@@ -223,7 +229,7 @@ export default function App() {
             <Button
               title="OK"
               onPress={() => {
-                add(text, valor, null)
+                add(text, valor, categoria)
                 setValor(null)
                 setText(null)
               }}
@@ -245,9 +251,7 @@ export default function App() {
             />
           </View>
           <ScrollView style={styles.listArea}>
-            <Items
-              done={categoria}
-            />
+            <Items categoria={categoria} items={items} setItems={setItems} />
           </ScrollView>
         </>
       )}
