@@ -53,7 +53,6 @@ function Items({ done: doneHeading, onPressItem })  { const [items, setItems] = 
   if (items === null || items.length === 0) {
     return null;
   }
-
   return (
     
     <View style={styles.sectionContainer}>
@@ -88,8 +87,8 @@ export default function App() {
   const [forceUpdate, forceUpdateId] = useState(useForceUpdate());
 
   const [open, setOpen] = useState(false);
-  const [categoria, setCategoria] = useState("Mercado");
-  const [novaCategoria, setNovaCategoria] = useState("Teste");
+  const [categoria, setCategoria] = useState(null);
+  const [novaCategoria, setNovaCategoria] = useState(null);
   const [categorias, setCategorias] = useState([{"label":"Aaaa","value":"Aaaa"}]);
  
   Moment.locale('pt-BR'); 
@@ -102,7 +101,8 @@ export default function App() {
       null,
       (_, { rows: { _array } }) => {
         console.log("categorias: '" + JSON.stringify(categorias) + "'") 
-        setCategorias(_array);  
+        setCategorias(_array);
+        //useState(categorias, _array)  
         console.log("_array: '" + JSON.stringify(_array) + "'")
         console.log("categorias: '" + JSON.stringify(categorias) + "'")
         }
@@ -117,16 +117,12 @@ export default function App() {
       //);
       tx.executeSql(
         "create table if not exists despesas (id integer primary key not null, done int, value text, valor integer, data date, categoria text);"
-      );/*
-      tx.executeSql(
-        "drop table categoria;"
-      );*/
+      );
+      //tx.executeSql("drop table categoria;" );
       tx.executeSql(
         "create table if not exists categoria (label text, value text);"
       );
       carregarCategorias()
-
-      
     });
   }, []);
 
@@ -162,6 +158,8 @@ export default function App() {
     if (novaCategoria === null || novaCategoria === "") {
       return false;
     }
+
+    // Fazer select para ver se ja nao existe uma categoria com mesmo nome
 
     db.transaction(
       (tx) => {
@@ -207,10 +205,12 @@ export default function App() {
             <DropDownPicker
               open={open}
               value={categoria}
-              items={categorias}
               setOpen={setOpen}
               setValue={setCategoria}
-              setItems={setCategorias}
+              items={categorias.map((option) => ({
+                label: option.name,
+                value: option.id,
+              }))}
             />
             <TextInput
               onChangeText={(valor) => setValor(valor)}
@@ -227,8 +227,8 @@ export default function App() {
             />
             
             <Button
-              title="OK"
-              onPress={() => {
+              title="OK" 
+              onPress={() => { 
                 add(text, valor, categoria)
                 setValor(null)
                 setText(null)
@@ -236,10 +236,10 @@ export default function App() {
             />
 
             <TextInput
-              onChangeText={(text) => setNovaCategoria(text)}
+              onChangeText={(novaCategoria) => setNovaCategoria(novaCategoria)}
               placeholder="Categoria"
               style={styles.input}
-              value={text}
+              value={novaCategoria}
             />
             
             <Button
@@ -247,6 +247,8 @@ export default function App() {
               onPress={() => {
                 addCategoria(novaCategoria)
                 setNovaCategoria(null)
+                carregarCategorias()
+                console.log(categorias)
               }}
             />
           </View>
