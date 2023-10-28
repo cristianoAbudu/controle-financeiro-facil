@@ -35,20 +35,20 @@ function openDatabase() {
 
 const db = openDatabase();
 
-function Items({ done: doneHeading, onPressItem })  { const [items, setItems] = useState(null);
-  console.log("Items()");
+function Items({ categoria, onPressItem, items, setItems })  {
+  console.log("Items()", items);
   useEffect(() => {
-    console.log("doneHeading: "+doneHeading);
+    console.log("categoria: ", categoria);
     db.transaction((tx) => {
       tx.executeSql(
         `select * from despesas where categoria = ?;`,
-        [doneHeading],
+        [categoria],
         (_, { rows: { _array } }) => setItems(_array)
       );
     });
-  }, []);
+  }, [categoria]); // dependencia de categoria para atualizar quando categoria for alterada
 
-  const heading = "Despesas de "+doneHeading;
+  const heading = "Despesas de " + categoria;
 
   if (items === null || items.length === 0) {
     return null;
@@ -84,13 +84,12 @@ export default function App() {
   const [text, setText] = useState(null);
   const [valor, setValor] = useState(null);
 
-  const [forceUpdate, forceUpdateId] = useState(useForceUpdate());
-
   const [open, setOpen] = useState(false);
   const [categoria, setCategoria] = useState(null);
   const [novaCategoria, setNovaCategoria] = useState(null);
   const [categorias, setCategorias] = useState([{"label":"Aaaa","value":"Aaaa"}]);
- 
+  const [items, setItems] = useState([]);
+
   Moment.locale('pt-BR'); 
 
   function carregarCategorias() {
@@ -127,7 +126,7 @@ export default function App() {
   }, []);
 
   const add = (text, valor, categoria) => {
-    console.log("add =");
+    console.log("add = ", categoria);
 
     // is valor empty?
     console.log(text)
@@ -140,12 +139,16 @@ export default function App() {
     db.transaction(
       (tx) => {
         tx.executeSql("insert into despesas (done, value, valor, data, categoria) values (0, ?, ?, CURRENT_TIMESTAMP, ?)", [text, valor, categoria]);
-        tx.executeSql("select * from despesas where categoria = ?", [categoria], (_, { rows }) =>
-          console.log(JSON.stringify(rows))
+        tx.executeSql(
+            "select * from despesas where categoria = ?",
+            [categoria],
+            function (_, { rows }){
+              console.log('rows', JSON.stringify(rows))
+              setItems(rows._array)
+            }
         );
       },
       (e) => {console.log(e)},
-      forceUpdate
     );
 
     console.log("linha 106")
@@ -167,19 +170,18 @@ export default function App() {
           "insert into categoria (label, value) values (?, ?)", 
           [novaCategoria, novaCategoria],
           (_, { rows }) => {
-            "ADICIONADO COM SUCESSO"
+            console.log("ADICIONADO COM SUCESSO")
           }
         );
         tx.executeSql(
           "select * from categoria", 
           [], 
           (_, { rows }) => {
-            setCategoria(rows) 
+            setCategorias(rows._array)
           }
         );
       },
       (e) => {console.log(e)},
-      forceUpdate
     );
 
     console.log("linha 106")
@@ -253,22 +255,12 @@ export default function App() {
             />
           </View>
           <ScrollView style={styles.listArea}>
-            <Items
-              key={`forceupdate-todo-${forceUpdateId}`}
-              done={categoria}
-            />
+            <Items categoria={categoria} items={items} setItems={setItems} />
           </ScrollView>
         </>
       )}
     </View>
   );
-}
-
-function useForceUpdate() {
-  console.log("useForceUpdate()");
-
-  const [value, setValue] = useState(0);
-  return [() => setValue(value + 1), value];
 }
 
 const styles = StyleSheet.create({
