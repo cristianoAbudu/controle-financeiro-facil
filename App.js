@@ -83,8 +83,6 @@ export default function App() {
     db.transaction((tx) => {
       tx.executeSql("select * from despesas where categoria = ?", [categoriaSelecionada], (_, { rows }) => {
         setListaDespesas(rows._array);
-        setValor('');
-        setDescricao('');
       });
     });
   }, [categoriaSelecionada]);
