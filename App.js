@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import {
   Platform,
-  ScrollView,
-  StyleSheet,
+  FlatList,
   Text,
   TextInput,
   TouchableOpacity,
   View,
   Button,
+  StyleSheet,
 } from "react-native";
 import Constants from "expo-constants";
 import * as SQLite from "expo-sqlite";
@@ -17,8 +17,6 @@ import Moment from 'moment';
 
 
 function openDatabase() {
-  console.log("openDatabase()");
-
   if (Platform.OS === "web") {
     return {
       transaction: () => {
@@ -35,156 +33,142 @@ function openDatabase() {
 
 const db = openDatabase();
 
-function Items({ done: doneHeading, onPressItem })  { const [items, setItems] = useState(null);
-  console.log("Items()");
-  useEffect(() => {
-    console.log("doneHeading: "+doneHeading);
-    db.transaction((tx) => {
-      tx.executeSql(
-        `select * from despesas where categoria = ?;`,
-        [doneHeading],
-        (_, { rows: { _array } }) => setItems(_array)
-      );
-    });
-  }, []);
-
-  const heading = "Despesas de "+doneHeading;
-
-  if (items === null || items.length === 0) {
-    return null;
-  }
-  return (
-    
-    <View style={styles.sectionContainer}>
-      <Text style={styles.sectionHeading}>{heading}</Text>
-      {items.map(({ id, done, value, data, valor }) => (
-        <TouchableOpacity
-          key={id}
-          onPress={() => onPressItem && onPressItem(id)}
-          style={{
-            backgroundColor: done ? "#1c9963" : "#fff",
-            borderColor: "#000",
-            borderWidth: 1,
-            padding: 8,
-          }}
-        >
-          <View style={styles.flexRow}>
-            <Text>{Moment(data).format('DD/MM/yyyy')} - </Text> 
-            <Text>{valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Text> 
-            <Text>{value? " - "+value : ""} </Text>
-          </View>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-}
 
 export default function App() {
-  console.log("App()");
-  const [text, setText] = useState(null);
-  const [valor, setValor] = useState(null);
+  // NOTE: quando funções de setState são usadas a tela renderiza novamente
+  // com os valores atualizados
 
-  const [forceUpdate, forceUpdateId] = useState(useForceUpdate());
+  // states: dados de nova despesa
+  const [descricao, setDescricao] = useState('');
+  const [valor, setValor] = useState('');
 
-  const [open, setOpen] = useState(false);
-  const [categoria, setCategoria] = useState(null);
-  const [novaCategoria, setNovaCategoria] = useState(null);
-  const [categorias, setCategorias] = useState([{"label":"Aaaa","value":"Aaaa"}]);
+  // state: dados do dropdown
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [listaCategorias, setListaCategorias] = useState([]);
+
+  // states: dados de nova categoria
+  const [nomeNovaCategoria, setNomeNovaCategoria] = useState('');
+
+  // states: lista de todas as despesas
+  const [listaDespesas, setListaDespesas] = useState([]);
  
+
   Moment.locale('pt-BR'); 
 
-  function carregarCategorias() {
-    console.log('carregarCategorias()')
-    db.transaction((tx) => {
-    tx.executeSql(
-      'select * from categoria;', 
-      null,
-      (_, { rows: { _array } }) => {
-        console.log("categorias: '" + JSON.stringify(categorias) + "'") 
-        setCategorias(_array);
-        //useState(categorias, _array)  
-        console.log("_array: '" + JSON.stringify(_array) + "'")
-        console.log("categorias: '" + JSON.stringify(categorias) + "'")
-        }
-      );
-    });
-  }
 
+  // NOTE: roda 1 vez no mount da tela
   useEffect(() => {
     db.transaction((tx) => {
-      //tx.executeSql(
-      //  "drop table despesas;"
-      //);
+      // tx.executeSql("drop table despesas;");
+      // tx.executeSql("drop table categoria;" );
       tx.executeSql(
         "create table if not exists despesas (id integer primary key not null, done int, value text, valor integer, data date, categoria text);"
       );
-      //tx.executeSql("drop table categoria;" );
       tx.executeSql(
         "create table if not exists categoria (label text, value text);"
       );
-      carregarCategorias()
+      tx.executeSql(
+        'select * from categoria;', 
+        null,
+        (_, { rows: { _array } }) => {
+          setListaCategorias(_array);
+        }
+      );
     });
   }, []);
 
-  const add = (text, valor, categoria) => {
-    console.log("add =");
+  // NOTE: roda sempre que o estado categoriaSelecionada mudar de valor
+  useEffect(() => {
+    db.transaction((tx) => {
+      tx.executeSql("select * from despesas where categoria = ?", [categoriaSelecionada], (_, { rows }) => {
+        setListaDespesas(rows._array);
+      });
+    });
+  }, [categoriaSelecionada]);
 
-    // is valor empty?
-    console.log(text)
-    console.log(valor)
-    if (valor === null || valor === "") {
-      return false;
+  
+
+  function addDespesa() {
+    if (!valor || !descricao || ! categoriaSelecionada) {
+      // TODO: substituir por notificação ao usuário
+      console.warn('Preencha todos os dados da despesa.');
+      return;
     }
-    console.log("linha 93")
 
     db.transaction(
       (tx) => {
-        tx.executeSql("insert into despesas (done, value, valor, data, categoria) values (0, ?, ?, CURRENT_TIMESTAMP, ?)", [text, valor, categoria]);
-        tx.executeSql("select * from despesas where categoria = ?", [categoria], (_, { rows }) =>
-          console.log(JSON.stringify(rows))
-        );
+        tx.executeSql("insert into despesas (done, value, valor, data, categoria) values (0, ?, ?, CURRENT_TIMESTAMP, ?)", [descricao, valor, categoriaSelecionada]);
+        tx.executeSql("select * from despesas where categoria = ?", [categoriaSelecionada], (_, { rows }) => {
+          setListaDespesas(rows._array);
+          setValor('');
+          setDescricao('');
+        });
       },
       (e) => {console.log(e)},
-      forceUpdate
     );
-
-    console.log("linha 106")
-
   };
 
-  const addCategoria = (novaCategoria) => {
-    console.log("addCategoria ="+novaCategoria);
-
-    if (novaCategoria === null || novaCategoria === "") {
-      return false;
+  function addCategoria() {
+    if (!nomeNovaCategoria) {
+      // TODO: substituir por notificação ao usuário
+      console.warn('Preencha todos os dados da categoria.');
+      return;
     }
 
     // Fazer select para ver se ja nao existe uma categoria com mesmo nome
-
     db.transaction(
       (tx) => {
         tx.executeSql(
           "insert into categoria (label, value) values (?, ?)", 
-          [novaCategoria, novaCategoria],
-          (_, { rows }) => {
-            "ADICIONADO COM SUCESSO"
-          }
+          [nomeNovaCategoria, nomeNovaCategoria],
+          (_, { rows }) => {}
         );
         tx.executeSql(
           "select * from categoria", 
           [], 
           (_, { rows }) => {
-            setCategoria(rows) 
+            setListaCategorias(rows._array);
           }
         );
       },
       (e) => {console.log(e)},
-      forceUpdate
     );
-
-    console.log("linha 106")
-
   };
+
+  function renderDespesa({item}) {
+    function updateDespesa() {
+      db.transaction(
+        (tx) => {
+          tx.executeSql("update despesas set done = ? where id = ?", [item.done === 0 ? 1 : 0, item.id]);
+          tx.executeSql("select * from despesas where categoria = ?", [categoriaSelecionada], (_, { rows }) => {
+            setListaDespesas(rows._array);
+          });
+        },
+        (e) => {console.log(e)},
+      );
+    }
+
+
+    return(
+      <TouchableOpacity
+        onPress={updateDespesa}
+        style={{
+          backgroundColor: item.done ? "#1c9963" : "#fff",
+          borderColor: "#000",
+          borderWidth: 1,
+          padding: 8,
+        }}
+      >
+        <View style={styles.flexRow}>
+          <Text>{Moment(item.data).format('DD/MM/yyyy')} - </Text> 
+          <Text>{item.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Text> 
+          <Text>{item.value? " - " + item.value : ""} </Text>
+        </View>
+      </TouchableOpacity>
+    )
+  }
+
 
   return (
     <View style={styles.container}>
@@ -203,72 +187,70 @@ export default function App() {
           <View>
             
             <DropDownPicker
-              open={open}
-              value={categoria}
-              setOpen={setOpen}
-              setValue={setCategoria}
-              items={categorias.map((option) => ({
-                label: option.name,
-                value: option.id,
-              }))}
+              open={isDropdownOpen}
+              value={categoriaSelecionada}
+              setOpen={setIsDropdownOpen}
+              setValue={setCategoriaSelecionada}
+              items={listaCategorias}
             />
             <TextInput
-              onChangeText={(valor) => setValor(valor)}
-              placeholder="Valor (R$)"
+              onChangeText={setValor}
+              placeholder="Valor da nova despesa (R$)"
               style={styles.input}
               value={valor}
               keyboardType="numeric"
             />
             <TextInput
-              onChangeText={(text) => setText(text)}
-              placeholder="Descrição"
+              onChangeText={setDescricao}
+              placeholder="Descrição da nova despesa"
               style={styles.input}
-              value={text}
+              value={descricao}
             />
             
             <Button
-              title="OK" 
+              title="adicionar nova despesa" 
               onPress={() => { 
-                add(text, valor, categoria)
-                setValor(null)
-                setText(null)
+                addDespesa();
               }}
             />
 
             <TextInput
-              onChangeText={(novaCategoria) => setNovaCategoria(novaCategoria)}
-              placeholder="Categoria"
+              onChangeText={setNomeNovaCategoria}
+              placeholder="Nome da nova categoria"
               style={styles.input}
-              value={novaCategoria}
+              value={nomeNovaCategoria}
             />
             
             <Button
-              title="OK"
+              title="adicionar nova categoria"
               onPress={() => {
-                addCategoria(novaCategoria)
-                setNovaCategoria(null)
-                carregarCategorias()
-                console.log(categorias)
+                addCategoria();
+                setNomeNovaCategoria('');
               }}
             />
+
           </View>
-          <ScrollView style={styles.listArea}>
-            <Items
-              key={`forceupdate-todo-${forceUpdateId}`}
-              done={categoria}
-            />
-          </ScrollView>
+
+          {/* NOTE: o flatlist pode ser mais vantajoso para listas grandes,
+          pois ele renderiza os itens a medida em que o usuário faz o scroll */}
+          <FlatList
+            ListHeaderComponent={
+              (categoriaSelecionada && listaDespesas.length > 0) && (
+                <Text style={styles.sectionHeading}>
+                  Despesas de {categoriaSelecionada}
+                </Text>
+              )
+            }
+            contentContainerStyle={styles.sectionContainer}
+            keyExtractor={item => String(item.id)}
+            data={listaDespesas}
+            renderItem={renderDespesa}
+          />
+
         </>
       )}
     </View>
   );
-}
-
-function useForceUpdate() {
-  console.log("useForceUpdate()");
-
-  const [value, setValue] = useState(0);
-  return [() => setValue(value + 1), value];
 }
 
 const styles = StyleSheet.create({
