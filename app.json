@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "5d5538d8-265b-4f7c-bea9-f02f7a269cba"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.jmr2704.controlefinanceirofacil"
+    }
+  }
+}
